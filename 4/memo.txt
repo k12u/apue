@@ -1,0 +1,82 @@
+4.1 はじめに
+ファイルのオープン、読み書き以外の機能、ファイルの属性について。
+
+4.2 stat, fstat, lstat関数
+statは 文字列で指定したファイルに関する情報を返す。
+fstatはopen済みのfdに関する情報を返す。
+lstatはfstatと似ているが、シンボリックリンクを追わずにシンボリックリンクそのものの情報を返す。
+
+#include <sys/types.h>
+#inclued <sys/stat.h>
+
+int stat(const char *pathname, struct stat *buf);
+int fstat(int fields, struct stat *buf);
+int lstat(const char *pathname, struct stat *buf);
+
+第2引数は、構造体へのポインタを指定する。
+
+struct stat {
+  mode_t st_mode;
+  ino_t st_ino;
+  dev_t st_dev;
+  dev_t st_rdev;
+  nlink_t st_nlink;
+  uid_t st_uid;
+  gid st_gid;
+  off_t st_size;
+  time_t st_atime
+  time_t st_mtime;;
+  time_t st_ctime
+  long st_blocksize;
+  long st_blocks;
+};
+
+4.3 ファイルの種類
+
+1. 普通のファイル。バイナリ・テキストといった区別はカーネルには存在しない。
+1. ディレクトリ。ディレクトリファイルへ書き込めるのはカーネルのみ。
+1. 文字型特殊ファイル(character special file)   バイトストリームとして(getcharなどで)扱われる特殊ファイルで通常ランダムアクセスできない。マウス、キーボード、仮想端末、シリアルモデムなど
+1. ブロック型特殊ファイル(block special file)   ブロック単位で(freadなどで)読み込む想定の特殊ファイルで、ディスクなどストレージデバイスが典型的。
+1. FIFO プロセス間通信に使うファイル。名前付きパイプとも呼ぶ。詳しくは14.5節
+1. ソケットプロセス間のネットワーク通信に使用されるファイル。詳しくは15章
+1. シンボリックリンク。詳しくは4.16
+
+ファイルの種類はstat構造体のメンバーst_modeを使ってマクロで取得できる。
+
+$ ./stat ~/.bashrc /etc /dev/ttyp0 /dev/disk0 /var/spool/cups/
+/Users/k12u/.bashrc: regular
+/etc: symbolic link
+/dev/ttyp0: character special
+/dev/disk0: block special
+/var/spool/cups/: directory
+
+$ ./access /var/log/krb5kdc
+access error for /var/log/krb5kdc
+open error for /var/log/krb5kdc
+
+$ ./access ./access
+read access OK
+open for reading OK
+
+$ ls -l
+total 0
+-rw-r-----  1 _dovecot  operator  0  2 19 18:19 file
+$ ~/src/apue/4/access ./file 
+access error for ./file
+open error for ./file
+$ sudo -s
+# chown _dovecot ~/src/apue/4/access
+# chmod u+s  ~/src/apue/4/access
+# ls -l ~/src/apue/4/access
+-rwsr-xr-x  1 _dovecot  staff  8880  2 19 18:12 /Users/k12u/src/apue/4/access
+# exit
+$ ~/src/apue/4/access file
+access error for file
+open for reading OK
+$ 
+
+$ touch dummy
+$ chown root dummy
+chown: dummy: Operation not permitted
+
+./unistd.h:#define	_POSIX_CHOWN_RESTRICTED		200112L
