@@ -18,7 +18,7 @@ main(void)
   if (write(fd, buf1, 10) != 10)
     perror("buf1 write error");
 
-  if(lseek(fd, 40, SEEK_SET) == -1)
+  if(lseek(fd, 9*1024*1024, SEEK_SET) == -1)
     perror("lseek error");
 
   if (write(fd, buf2, 10) != 10)
